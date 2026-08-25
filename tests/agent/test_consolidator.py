@@ -469,6 +469,7 @@ class TestConsolidatorTokenBudget:
         # The chunk is considered "materialized" (as a raw-archive breadcrumb),
         # so last_consolidated must have moved past it.
         assert session.last_consolidated == 50
+        consolidator.sessions.save.assert_called_once_with(session)
 
     async def test_raw_archive_fallback_breaks_round_loop(
         self, consolidator, runtime

@@ -4,6 +4,7 @@ import json
 import os
 import re
 import shutil
+import sys
 from pathlib import Path
 from typing import Any, cast
 
@@ -101,6 +102,7 @@ class SkillsLoader:
 
         plugin_skills = enabled_agent_plugin_skills(self.workspace)
         skills = self._skill_entries_from_dir(self.workspace_skills, "workspace")
+        # 获取每一个单独的skill工具
         seen_names = {entry["name"] for entry in skills}
         for name, path in plugin_skills:
             if name in seen_names:
@@ -208,6 +210,7 @@ class SkillsLoader:
         workspace: Path | None = None,
     ) -> str:
         """
+        skill技能加载的入库
         Build a summary of all skills (name, description, path, availability).
 
         This is used for progressive loading - the agent can read the full
@@ -368,5 +371,28 @@ class SkillsLoader:
 
         Returns:
             Metadata dict or None.
+
+        例如 name、description、metadata（一整行 JSON 字符串）、always 等都会以字符串形式出现在 dict 里。
+        metadata:
+            name: weather
+            description: Get current weather and forecasts.
+            homepage: https://wttr.in/:help
+            metadata: {"nanobot":{"emoji":"🌤️","requires":{"bins":["curl"]}}}
         """
         return parse_skill_metadata(self.load_skill(name) or "")
+
+
+if __name__ == "__main__":
+    # Demo:
+    #   python nanobot/agent/skills.py
+    #   python nanobot/agent/skills.py /path/to/workspace
+    workspace_arg = Path(sys.argv[1]).expanduser().resolve() if len(sys.argv) > 1 else Path.cwd()
+    loader = SkillsLoader(workspace=workspace_arg)
+
+    print(f"[SkillsLoader Demo] workspace={workspace_arg}")
+    skills = loader.list_skills(filter_unavailable=False)
+    print(f"total_skills={len(skills)}")
+    print(json.dumps(skills, ensure_ascii=False, indent=2))
+
+    print("\n[Skills Summary]")
+    print(loader.build_skills_summary())
